@@ -1,14 +1,15 @@
+require('dotenv/config.js');
+
 async function main() {
   const [deployer] = await ethers.getSigners();
 
   console.log("Deploying contracts with the account:", deployer.address);
-
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
-  const HelloWorld = await ethers.getContractFactory("HelloWorld");
-  const helloWorldContract = await HelloWorld.deploy("Hello World!");
+  const Arbitrage = await ethers.getContractFactory("Arbitrage");
+  const ArbitrageContract = await Arbitrage.deploy(process.env.AAVE_LENDING_POOL_V2_FOR_AVAX_FUJI);
 
-  console.log("HelloWorld address:", helloWorldContract.address);
+  console.log("Arbitrage address:", ArbitrageContract.address);
 }
 
 main()
