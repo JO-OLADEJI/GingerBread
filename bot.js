@@ -1,10 +1,10 @@
-// require('dotenv/config.js');
-// const { ethers } = require("hardhat");
-const avalanche = require('avalanche').Avalanche;
-// const contractAddress = '0x6Afa262bA937352284f5EC8C5570530D677e1566';
-// const contractABI = require('./artifacts/contracts/HelloWorld.sol/HelloWorld.json')['abi'];
+require('dotenv/config.js');
+// const avalanche = require('avalanche').Avalanche;
+const Web3 = require('web3');
+const arbitrageABI = require('./artifacts/contracts/Arbitrage.sol/Arbitrage.json')['abi'];
+const arbitrageAddress = '0xce144F329F42C7028B0335d7625515bDC7b25608';
 
-// ethers.providers.JsonRpcProvider(process.env.MORALIS_TEST_SERVER, );
+const web3 = new Web3('https://api.avax-test.network/ext/bc/C/rpc');
+const ArbitrageContract = new web3.eth.Contract(arbitrageABI, arbitrageAddress);
 
-// const HelloWorldContract = new ethers.Contract(contractAddress, contractABI, '[signer]');
-
+console.log(ArbitrageContract['_address']);

@@ -5,8 +5,8 @@
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js",
-    "compile": "npx hardhat compile",
-    "deploy": "npx hardhat run scripts/deploy.js --verbose --network avalancheTest"
+    "compile": "npx hardhat compile --verbose",
+    "deploy": "npx hardhat run scripts/deploy.js --network avalancheTest"
   },
   "keywords": [],
   "author": "Joshua Oladeji",
