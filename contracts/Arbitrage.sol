@@ -34,6 +34,10 @@ contract Arbitrage is FlashLoanReceiverBaseV2, Withdrawable {
         // Your logic goes here.
         //
 
+        // ----------------------- TODO ---------------------------
+        // 1. buy currency from the DEX with the lower rate
+        // 2. sell-off currency to the DEX with higher rate
+
         // At the end of your logic above, this contract owes
         // the flashloaned amounts + premiums.
         // Therefore ensure your contract has enough to repay
@@ -44,6 +48,9 @@ contract Arbitrage is FlashLoanReceiverBaseV2, Withdrawable {
             uint256 amountOwing = amounts[i].add(premiums[i]);
             IERC20(assets[i]).approve(address(LENDING_POOL), amountOwing);
         }
+
+        // ----------------------- TODO ---------------------------
+        // 3. try withdrawing the profit to the owner's address
 
         return true;
     }
