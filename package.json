@@ -15,6 +15,7 @@
     "@openzeppelin/contracts": "^4.5.0",
     "@pangolindex/exchange-contracts": "^1.0.2",
     "avalanche": "^3.12.1",
+    "axios": "^0.26.1",
     "dotenv": "^16.0.0",
     "hardhat": "^2.9.1",
     "web3": "^1.7.1"
