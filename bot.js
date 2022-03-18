@@ -12,6 +12,7 @@ const { abi } = require('@pangolindex/exchange-contracts/artifacts/contracts/pan
 /*
 - This bot runs on the AVALANCHE C-CHAIN
 - To configure it to run on another network, change the environment variables to point to a node running on another network
+- This bot only works when one of the tokens compared is the native coin of the network - in this case WAVAX is the native coin of the AVALANCHE C-CHAIN
 */
 class TraderBot {
 
@@ -44,16 +45,41 @@ class TraderBot {
   }
 
   getPangolinRate = async () => {
-    //
+    try {
+      const pangolinFactoryAddress = pangolin['ADDRESS'];
+      const pangolinFactoryABI = pangolin['ABI'];
+      const PangolinFactoryContract = new this.web3Instance.eth.Contract(pangolinFactoryABI, pangolinFactoryAddress);
+      const pairAddress = await PangolinFactoryContract.methods.getPair(this.inputTokenAddress, this.outputTokenAddress).call();
+      const ExchangeContract = await new this.web3Instance.eth.Contract(abi, pairAddress);
+      const reserves = await ExchangeContract.methods.getReserves().call();
+      const rate = Number(reserves['reserve1']) / Number(reserves['reserve0']);
+      
+      return rate;
+    }
+    catch (err) {
+      console.log(new Error(err.message));
+      return 0;
+    }
   }
 
   getTraderjoeRate = async () => {
-    // values in AVAX
-    const baseUrl = 'https://api.traderjoexyz.com/priceavax/';
-    const inputToken = await axios.get(baseUrl + this.inputTokenAddress);
-    const outputToken = await axios.get(baseUrl + this.outputTokenAddress);
-    const rate = Number(inputToken.data) / Number(outputToken.data);
-    return rate;
+    try {
+      // values in AVAX
+      const baseUrl = 'https://api.traderjoexyz.com/priceavax/';
+      const inputToken = await axios.get(baseUrl + this.inputTokenAddress);
+      const outputToken = await axios.get(baseUrl + this.outputTokenAddress);
+      const rate = Number(inputToken.data) / Number(outputToken.data);
+      return rate;
+    }
+    catch (err) {
+      console.log(new Error(err.message));
+      return 0;
+    }
+  }
+
+  compareDexes = async () => {
+    // get the rate from trader joe
+    // get the rate from pangolin
   }
 
 }
@@ -72,14 +98,19 @@ const wavax = {
   address: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7'
 }
 
-const tradeBot = new TraderBot('mainnet', aave, ape);
-tradeBot.getTraderjoeRate().then((value) => {
-  console.table([{
-    'Input Token': tradeBot.inputTokenSymbol,
-    'Output Token': tradeBot.outputTokenSymbol,
-    'Output Amount': 1,
-    'Trader Joe': value
-  }]);
+const tradeBot = new TraderBot('mainnet', aave, wavax);
+// tradeBot.getTraderjoeRate()
+// .then((value) => {
+//   console.table([{
+//     'Input Token': tradeBot.inputTokenSymbol,
+//     'Output Token': tradeBot.outputTokenSymbol,
+//     'Output Amount': 1,
+//     'Trader Joe': value
+//   }]);
+// });
+tradeBot.getPangolinRate()
+.then((value) => {
+  console.log({ 'Reserves': value });
 });
 
 
@@ -94,20 +125,20 @@ tradeBot.getTraderjoeRate().then((value) => {
 // const web3WebSocketMainnet = new Web3(process.env.MORALIS_MAINNET_WEB_SOCKET_NODE);
 
 
-const getPangolinPairReserves = async (_web3Instance, _factoryContract, _otherCoinAddress) => {
-  try {
-    const pairAddress = await _factoryContract.methods.getPair(_otherCoinAddress, nativeCoinAddress).call();
-    const ExchangeContract = await new _web3Instance.eth.Contract(abi, pairAddress);
-    const reserves = await ExchangeContract.methods.getReserves().call();
-    console.log(reserves);
-    // console.log(pairAddress);
-    // return reserves;
-  }
-  catch (error) {
-    console.log(new Error(error.message));
-    return 0;
-  }
-}
+// const getPangolinPairReserves = async (_web3Instance, _factoryContract, _otherCoinAddress) => {
+//   try {
+//     const pairAddress = await _factoryContract.methods.getPair(_otherCoinAddress, nativeCoinAddress).call();
+//     const ExchangeContract = await new _web3Instance.eth.Contract(abi, pairAddress);
+//     const reserves = await ExchangeContract.methods.getReserves().call();
+//     console.log(reserves);
+//     // console.log(pairAddress);
+//     // return reserves;
+//   }
+//   catch (error) {
+//     console.log(new Error(error.message));
+//     return 0;
+//   }
+// }
 
 const getTraderjoePairReserves = async (_web3Instance, _factoryContract, _otherCoinAddress) => {
   try {
@@ -147,9 +178,7 @@ const checkLatestBlock = async () => {
 
 
 // // 2. get given crypto pair rate from pangolin
-// const pangolinFactoryAddress = pangolin['ADDRESS'];
-// const pangolinFactoryABI = pangolin['ABI'];
-// const PangolinFactoryContract = new web3HttpsMainnet.eth.Contract(pangolinFactoryABI, pangolinFactoryAddress);
+
 // getPangolinPairReserves(web3HttpsMainnet, PangolinFactoryContract, otherCoinAddress);
 
 
