@@ -78,9 +78,23 @@ class TraderBot {
   }
 
   compareDexes = async () => {
-    // get the rate from trader joe
-    // get the rate from pangolin
+    const traderjoeRate = await this.getTraderjoeRate();
+    const pangolinRate = await this.getPangolinRate();
+    const difference = Math.abs(traderjoeRate - pangolinRate);
+
+    console.table([{
+      'Input Token': tradeBot.inputTokenSymbol,
+      'Output Token': tradeBot.outputTokenSymbol,
+      'Output Amount': 1,
+      'Trader Joe': traderjoeRate,
+      'Pangolin': pangolinRate,
+      'diff |T-J|': difference
+    }]);
   }
+
+  // TODO
+  // 4. find significant difference between prices
+  // 5. execute the flashloan contract
 
 }
 
@@ -89,74 +103,18 @@ const aave = {
   symbol: 'AAVE.e',
   address: '0x63a72806098Bd3D9520cC43356dD78afe5D386D9'
 }
-const ape = {
-  symbol: 'APE',
-  address: '0xd039C9079ca7F2a87D632A9C0d7cEa0137bAcFB5'
-}
 const wavax = {
   symbol: 'WAVAX',
   address: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7'
 }
 
 const tradeBot = new TraderBot('mainnet', aave, wavax);
-// tradeBot.getTraderjoeRate()
-// .then((value) => {
-//   console.table([{
-//     'Input Token': tradeBot.inputTokenSymbol,
-//     'Output Token': tradeBot.outputTokenSymbol,
-//     'Output Amount': 1,
-//     'Trader Joe': value
-//   }]);
-// });
-tradeBot.getPangolinRate()
-.then((value) => {
-  console.log({ 'Reserves': value });
-});
-
-
-// addresses of the coins present in the pair we want to check
-// const otherCoinAddress = '0x63a72806098Bd3D9520cC43356dD78afe5D386D9'; // AAVE - mainnet
-// const nativeCoinAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7'; // WAVAX - mainnet (The native currency of the avalanche C-chain)
-
-// web3 instances for the fuji testnet and avalanche mainnet on HTTPS and web socket
-// const web3HttpsTestnet = new Web3(process.env.MORALIS_FUJI_NODE);
-// const web3WebSocketTestnet = new Web3(process.env.MORALIS_FUJI_WEB_SOCKET_NODE);
-// const web3HttpsMainnet = new Web3(process.env.MORALIS_MAINNET_NODE);
-// const web3WebSocketMainnet = new Web3(process.env.MORALIS_MAINNET_WEB_SOCKET_NODE);
-
-
-// const getPangolinPairReserves = async (_web3Instance, _factoryContract, _otherCoinAddress) => {
-//   try {
-//     const pairAddress = await _factoryContract.methods.getPair(_otherCoinAddress, nativeCoinAddress).call();
-//     const ExchangeContract = await new _web3Instance.eth.Contract(abi, pairAddress);
-//     const reserves = await ExchangeContract.methods.getReserves().call();
-//     console.log(reserves);
-//     // console.log(pairAddress);
-//     // return reserves;
-//   }
-//   catch (error) {
-//     console.log(new Error(error.message));
-//     return 0;
-//   }
-// }
-
-const getTraderjoePairReserves = async (_web3Instance, _factoryContract, _otherCoinAddress) => {
-  try {
-    const pairAddress = await _factoryContract.methods.getPair(_otherCoinAddress, nativeCoinAddress).call();
-    
-  }
-  catch (error) {
-    console.log(new Error(error.message));
-    return 0;
-  }
-}
-
+tradeBot.compareDexes();
 
 // const ArbitrageContract = new web3HttpsTestnet.eth.Contract(arbitrageABI, arbitrageAddress);
 // we now have the contract to call the flash loan 👆 - Note: it's on fuji testnet
 
 
-// TODO
 // 1. listen to mined blocks on the avalanche blockchain
 let lastBlock = 0;
 const checkLatestBlock = async () => {
@@ -175,19 +133,3 @@ const checkLatestBlock = async () => {
   }
 };
 // checkLatestBlock();
-
-
-// // 2. get given crypto pair rate from pangolin
-
-// getPangolinPairReserves(web3HttpsMainnet, PangolinFactoryContract, otherCoinAddress);
-
-
-// // 3. get given crypto pair rate from trader joe
-// const traderjoeFactoryAddress = traderjoe['ADDRESS'];
-// const traderjoeFactoryABI = traderjoe['ABI'];
-// const TraderjoeFactoryContract = new web3HttpsMainnet.eth.Contract(traderjoeFactoryABI, traderjoeFactoryAddress);
-// // getTraderjoePairReserves(web3HttpsMainnet, TraderjoeFactoryContract, otherCoinAddress);
-
-
-// // 4. find significant difference between prices
-// // 5. execute the flashloan contract
