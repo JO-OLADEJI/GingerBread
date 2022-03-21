@@ -1,5 +1,6 @@
 require('dotenv/config.js');
-const Avalanche = require('avalanche').Avalanche;
+// const Avalanche = require('avalanche').Avalanche;
+const { ethers } = require('ethers');
 const Web3 = require('web3');
 const axios = require('axios');
 const chalk = require('chalk');
@@ -31,32 +32,45 @@ class ArbitrageBot {
   /**
    * 
    * @param {String} mode - 'testnet' or 'mainnet'
-   * @param {Object} inputToken - should have properties 'address' and 'symbol'
-   * @param {Object} outputToken - should have properties 'address' and 'symmbol'
+   * @param {Object} token0 - should have properties 'address' and 'symbol'
+   * @param {Object} token1 - should have properties 'address' and 'symmbol'
    */
-  constructor(mode, inputToken, outputToken) {
+  constructor(mode, token0, token1) {
     if (mode === 'testnet') {
-      this.web3Instance = new Web3(process.env.TESTNET_NODE);
+      this.web3Provider = new ethers.providers.JsonRpcProvider(process.env.TESTNET_NODE);
     }
     else if (mode === 'mainnet') {
-      this.web3Instance = new Web3(process.env.MAINNET_NODE);
+      this.web3Provider = new ethers.providers.JsonRpcProvider(process.env.MAINNET_NODE);
     }
     else {
       throw new Error('Mode must be one of "testnet" or "mainnet"');
     }
-    this.inputTokenAddress = inputToken['address'];
-    this.inputTokenSymbol = inputToken['symbol'];
-    this.outputTokenAddress = outputToken['address'];
-    this.outputTokenSymbol = outputToken['symbol'];
+    this.token0 = token0['address'];
+    this.token0Symbol = token0['symbol'];
+    this.token1 = token1['address'];
+    this.token1Symbol = token1['symbol'];
   }
+
+  checkLatestBlock = async () => {
+    this.web3Provider.on('block', async (blockNumber) => {
+      try {
+        console.log('>> ' + chalk.blue('Current block: ') + chalk.green.bold(blockNumber) + '\n');
+        // run arbitrage here
+      }
+      catch (err) {
+        console.log(new Error(err.message));
+      }
+    });
+  }
+
 
   getPangolinRate = async () => {
     try {
       const pangolinFactoryAddress = pangolin['ADDRESS'];
       const pangolinFactoryABI = pangolin['ABI'];
-      const PangolinFactoryContract = new this.web3Instance.eth.Contract(pangolinFactoryABI, pangolinFactoryAddress);
-      const pairAddress = await PangolinFactoryContract.methods.getPair(this.inputTokenAddress, this.outputTokenAddress).call();
-      const ExchangeContract = await new this.web3Instance.eth.Contract(abi, pairAddress);
+      const PangolinFactoryContract = new this.web3Provider.eth.Contract(pangolinFactoryABI, pangolinFactoryAddress);
+      const pairAddress = await PangolinFactoryContract.methods.getPair(this.token0, this.token1).call();
+      const ExchangeContract = await new this.web3Provider.eth.Contract(abi, pairAddress);
       const reserves = await ExchangeContract.methods.getReserves().call();
       // const rate = Number(reserves['reserve1']) / Number(reserves['reserve0']);
       const rate = Number(reserves['reserve0']) / Number(reserves['reserve1']);
@@ -73,8 +87,8 @@ class ArbitrageBot {
     try {
       // values in AVAX
       const baseUrl = 'https://api.traderjoexyz.com/priceavax/';
-      const inputToken = await axios.get(baseUrl + this.inputTokenAddress);
-      const outputToken = await axios.get(baseUrl + this.outputTokenAddress);
+      const inputToken = await axios.get(baseUrl + this.token0);
+      const outputToken = await axios.get(baseUrl + this.token1);
       const rate = Number(inputToken.data) / Number(outputToken.data);
       return rate;
     }
@@ -96,8 +110,8 @@ class ArbitrageBot {
     const difference = Math.abs(traderjoeRate - pangolinRate);
 
     console.table([{
-      'Input Token': this.inputTokenSymbol,
-      'Output Token': this.outputTokenSymbol,
+      'Input Token': this.token0Symbol,
+      'Output Token': this.token1Symbol,
       'n': '1 Token',
       'Trader Joe': traderjoeRate,
       'Pangolin': pangolinRate,
@@ -190,6 +204,7 @@ const wavax = {    // native coin to the AVALANCHE C-CHAIN
 }
 
 const tradeBot = new ArbitrageBot('mainnet', wavax, joe);
+tradeBot.checkLatestBlock();
 // tradeBot.calculateProfitInAVAX()
 // .then((profit) => {
 //   console.log('{ ' + chalk.blue('Profit: ') + chalk.red.bold(`${profit} AVAX`) + ' }\n\n');
@@ -197,10 +212,12 @@ const tradeBot = new ArbitrageBot('mainnet', wavax, joe);
 
 // const calculateTime = async () => {
 //   const startTime = Date.now();
-//   const res = await tradeBot.getTraderjoeRate();
+//   // -------------------------------------------
+//   const profit = await tradeBot.calculateProfitInAVAX();
+//   // -------------------------------------------
 //   const endTime = Date.now();
 
-//   console.log(chalk.blue('Traderjoe Rate - execution time: ') + chalk.yellow.bold(`${endTime - startTime} ms`))
+//   console.log(chalk.blue('Profit Calculation - execution time: ') + chalk.yellow.bold(`${endTime - startTime} ms`))
 // };
 // calculateTime();
 
