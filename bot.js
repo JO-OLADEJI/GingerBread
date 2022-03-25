@@ -1,14 +1,13 @@
 require('dotenv/config.js');
 // const Avalanche = require('avalanche').Avalanche;
 const { ethers } = require('ethers');
-const Web3 = require('web3');
 const axios = require('axios');
 const chalk = require('chalk');
 const arbitrageABI = require('./artifacts/contracts/Arbitrage.sol/Arbitrage.json')['abi'];
 const arbitrageAddress = '0xce144F329F42C7028B0335d7625515bDC7b25608';
 const pangolin = require('./contractABIs/pangolin');
 const traderjoe = require('./contractABIs/traderjoe');
-const { abi } = require('@pangolindex/exchange-contracts/artifacts/contracts/pangolin-core/interfaces/IPangolinPair.sol/IPangolinPair.json');
+const { abi: pangolinPairAbi } = require('@pangolindex/exchange-contracts/artifacts/contracts/pangolin-core/interfaces/IPangolinPair.sol/IPangolinPair.json');
 
 
 /*
@@ -20,14 +19,19 @@ class ArbitrageBot {
 
   amountToBorrow = 1000; // 1K AVAX
   flashLoanPremium = 0.0009;
-  traderjoeSwapRate = 0.003;
-  pangolinSwapRate = 0.003;
+  
   signal = {
     'buyFrom': '',
     'buyAmount': 0,
     'sellTo': ''
     // sell amount would be the entire tokens
   }
+
+  TOKEN1_TRADE = 1000;
+  TOKEN2_TRADE = 100000;
+  traderjoeSwapRate = 0.003; // 0.3%
+  pangolinSwapRate = 0.003; // 0.3%
+  amountOfToken0ToBorrow = 1000;
 
   /**
    * 
@@ -38,9 +42,11 @@ class ArbitrageBot {
   constructor(mode, token0, token1) {
     if (mode === 'testnet') {
       this.web3Provider = new ethers.providers.JsonRpcProvider(process.env.TESTNET_NODE);
+      this.wallet = new ethers.Wallet(process.env.AVALANCHE_TEST_PRIVATE_KEY, this.web3Provider);
     }
     else if (mode === 'mainnet') {
       this.web3Provider = new ethers.providers.JsonRpcProvider(process.env.MAINNET_NODE);
+      this.wallet = new ethers.Wallet(process.env.AVALANCHE_MAIN_PRIVATE_KEY, this.web3Provider);
     }
     else {
       throw new Error('Mode must be one of "testnet" or "mainnet"');
@@ -49,6 +55,7 @@ class ArbitrageBot {
     this.token0Symbol = token0['symbol'];
     this.token1 = token1['address'];
     this.token1Symbol = token1['symbol'];
+    this.flashloanContractAddress = '';
   }
 
   checkLatestBlock = async () => {
@@ -63,60 +70,114 @@ class ArbitrageBot {
     });
   }
 
+  run = async () => {
+    this.web3Provider.on('block', async (blockNumber) => {
+      try {
+        console.log('\n\n>> ' + chalk.blue('Current block: ') + chalk.green.bold(blockNumber));
+        
+        // - get price from pangolin
+        const PangolinFactory = new ethers.Contract(pangolin['ADDRESS'], pangolin['ABI'], this.wallet);
+        const pangolinPairAddress = await PangolinFactory.getPair(this.token0, this.token1);
+        const pangolinPair = new ethers.Contract(pangolinPairAddress, pangolinPairAbi, this.wallet);
+        const pangolinReserves = await pangolinPair.getReserves();
+        const pangolinReserve0 = Number(ethers.utils.formatUnits(pangolinReserves[0], 18));
+        const pangolinReserve1 = Number(ethers.utils.formatUnits(pangolinReserves[1], 18));
+        const pangolinPrice = pangolinReserve0 / pangolinReserve1;
 
-  getPangolinRate = async () => {
-    try {
-      const pangolinFactoryAddress = pangolin['ADDRESS'];
-      const pangolinFactoryABI = pangolin['ABI'];
-      const PangolinFactoryContract = new this.web3Provider.eth.Contract(pangolinFactoryABI, pangolinFactoryAddress);
-      const pairAddress = await PangolinFactoryContract.methods.getPair(this.token0, this.token1).call();
-      const ExchangeContract = await new this.web3Provider.eth.Contract(abi, pairAddress);
-      const reserves = await ExchangeContract.methods.getReserves().call();
-      // const rate = Number(reserves['reserve1']) / Number(reserves['reserve0']);
-      const rate = Number(reserves['reserve0']) / Number(reserves['reserve1']);
-      
-      return rate;
-    }
-    catch (err) {
-      console.log(new Error(err.message));
-      return 0;
-    }
-  }
+        // - get price from trader joe
+        const TraderjoeFactory = new ethers.Contract(traderjoe['ADDRESS'], traderjoe['ABI'], this.wallet);
+        const traderjoePairAddress = await TraderjoeFactory.getPair(this.token0, this.token1);
+        const TraderjoePair = new ethers.Contract(traderjoePairAddress, traderjoe['PAIR_ABI'], this.wallet);
+        const traderjoeReserves = await TraderjoePair.getReserves();
+        const traderjoeReserve0 = Number(ethers.utils.formatUnits(traderjoeReserves[0], 18));
+        const traderjoeReserve1 = Number(ethers.utils.formatUnits(traderjoeReserves[1], 18));
+        const traderjoePrice = traderjoeReserve0 / traderjoeReserve1;
 
-  getTraderjoeRate = async () => {
-    try {
-      // values in AVAX
-      const baseUrl = 'https://api.traderjoexyz.com/priceavax/';
-      const inputToken = await axios.get(baseUrl + this.token0);
-      const outputToken = await axios.get(baseUrl + this.token1);
-      const rate = Number(inputToken.data) / Number(outputToken.data);
-      return rate;
-    }
-    catch (err) {
-      console.log(new Error(err.message));
-      return 0;
-    }
+        // - tabulate the result to the console
+        this.tabulateResult(traderjoePrice, pangolinPrice);
+
+        // // - check if trade is profitable
+        // let borrowFrom;
+        // let profit;
+        // if (pangolinPrice < traderjoePrice) { // it means token0 is worth less on pangolin
+        //   borrowFrom = 'pangolin';
+
+        //   // TODO
+        //   // 1. calculate the potential profit from difference with account to no gas
+        //   const potentialprofitWithFeesInToken0 = ((this.amountOfToken0ToBorrow * (traderjoePrice - pangolinPrice)) / traderjoePrice) * 0.994;
+
+        //   // 2. calculate the gas fee on swapping
+        //   const gasLimit = await pangolinPair.estimateGas.swap(
+        //     0,
+        //     this.amountOfToken0ToBorrow,
+        //     '0xAC14513E6B0e6D403592CbB21E0E044726CcF3E4',
+        //     ethers.utils.toUtf8Bytes('1')
+        //   );
+        //   const gasPrice = await wallet.getGasPrice();
+        //   const gasFee = gasLimit * gasPrice;
+
+        //   // 3. find the difference between potential profit and gas fees
+        //   profit = potentialprofitWithFeesInToken0 - gasFee;
+        // }
+        // else if (pangolinPrice > traderjoePrice) { // it means token0 is worth less on traderjoe
+        //   // I DIDN'T IMPLEMENT THIS CAUSE I COULDN'T FIND THE CONTRACT CONTAINING TRADER JOE'S swap() FUNCTION
+        // }
+
+        // console.log({ borrowFrom, profit });
+
+      }
+      catch (err) {
+        console.log(new Error(err.message));
+      }
+    });
+    // do the entire thing here
   }
 
   compareDexes = async () => {
-    const traderjoeRate = await this.getTraderjoeRate();
-    const pangolinRate = await this.getPangolinRate();
-    const difference = Math.abs(traderjoeRate - pangolinRate);
+    const traderjoePrice = await this.getTraderjoePrice();
+    const pangolinPrice = await this.getPangolinPrice();
+    const absSpread = Math.abs((traderjoePrice / pangolinPrice - 1) * 100) - 0.6;
+    const spread = Math.abs(traderjoePrice - pangolinPrice);
+
+    console.log({ traderjoePrice, pangolinPrice });
+    console.log({ absSpread });
+    console.log({ spread });
     
-    return { traderjoeRate, pangolinRate };
+    // return { traderjoeRate: traderjoePrice, pangolinRate: pangolinPrice };
   }
 
-  tabulateResult = (traderjoeRate, pangolinRate, profit) => {
+  shouldTrade = async () => {
+    const traderjoePrice = await this.getTraderjoePrice();
+    const pangolinPrice = await this.getPangolinPrice();
+    const absSpread = Math.abs((traderjoePrice / pangolinPrice - 1) * 100) - 0.6;
+    // const spread = Math.abs(traderjoePrice - pangolinPrice);
+
+    // let shouldStartToken0;
+    // let shouldStartToken1;
+
+
+    // const gasLimit = await sushiEthDai.estimateGas.swap(
+    //   !shouldStartEth ? DAI_TRADE : 0,
+    //   shouldStartEth ? ETH_TRADE : 0,
+    //   flashLoanerAddress,
+    //   ethers.utils.toUtf8Bytes('1'),
+    // );
+
+    // const gasPrice = await this.wallet.getGasPrice();
+    // const gasCost = Number(ethers.utils.formatEther(gasPrice.mul(gasLimit)));
+  }
+
+  tabulateResult = (traderjoeRate, pangolinRate) => {
     const difference = Math.abs(traderjoeRate - pangolinRate);
 
     console.table([{
-      'Input Token': this.token0Symbol,
-      'Output Token': this.token1Symbol,
+      'Token0': this.token0Symbol,
+      'Token1': this.token1Symbol,
       'n': '1 Token',
       'Trader Joe': traderjoeRate,
       'Pangolin': pangolinRate,
       'difference': difference,
-      'Lend': `${this.amountToBorrow} AVAX`, // total number of tokens that would be borrowed
+      // 'Lend': `${this.amountToBorrow} AVAX`,
       // 'Refund': this.calculateRefund(),
       // 'Profit': profit < 0 ? chalk.red(`${profit}`) : chalk.green(`${profit}`)
       // 'Profit': chalk.red(`${profit}`)
@@ -178,68 +239,16 @@ class ArbitrageBot {
     return profit;
   }
 
-  // if flash loans is being used, loan can be repaid in other token
-  calculateProfitInOtherCurrency = () => {
-    // 
-  }
-
-  // TODO
-  // 4. find significant difference between prices
-  // 5. execute the flashloan contract
-
 }
 
 
-const aave = {
-  symbol: 'AAVE.e',
-  address: '0x63a72806098Bd3D9520cC43356dD78afe5D386D9'
-}
-const joe = {
-  symbol: 'JOE',
-  address: '0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd'
-}
-const wavax = {    // native coin to the AVALANCHE C-CHAIN
-  symbol: 'WAVAX',
-  address: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7'
-}
-
-const tradeBot = new ArbitrageBot('mainnet', wavax, joe);
-tradeBot.checkLatestBlock();
-// tradeBot.calculateProfitInAVAX()
-// .then((profit) => {
-//   console.log('{ ' + chalk.blue('Profit: ') + chalk.red.bold(`${profit} AVAX`) + ' }\n\n');
-// });
-
-// const calculateTime = async () => {
-//   const startTime = Date.now();
-//   // -------------------------------------------
-//   const profit = await tradeBot.calculateProfitInAVAX();
-//   // -------------------------------------------
-//   const endTime = Date.now();
-
-//   console.log(chalk.blue('Profit Calculation - execution time: ') + chalk.yellow.bold(`${endTime - startTime} ms`))
-// };
-// calculateTime();
-
-// const ArbitrageContract = new web3HttpsTestnet.eth.Contract(arbitrageABI, arbitrageAddress);
-// we now have the contract to call the flash loan 👆 - Note: it's on fuji testnet
 
 
-// 1. listen to mined blocks on the avalanche blockchain
-// let lastBlock = 0;
-// const checkLatestBlock = async () => {
-//   try {
-//     const latestBlock = await web3HttpsMainnet.eth.getBlockNumber();
-//     if (latestBlock > lastBlock) {
-//       // check for the arbitrage opportunity here ->
-//       lastBlock = latestBlock;
-//       console.log(lastBlock);
-//     }
+// make WAVAX the second parameter
+const tradeBot = new ArbitrageBot(
+  'mainnet', 
+  { symbol: 'WAVAX', address: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7' }, 
+  { symbol: 'JOE', address: '0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd' }
+);
 
-//     setTimeout(() => checkLatestBlock(), 1 * 1000);
-//   }
-//   catch (err) {
-//     console.log(new Error(err.message));
-//   }
-// };
-// checkLatestBlock();
+tradeBot.run();
