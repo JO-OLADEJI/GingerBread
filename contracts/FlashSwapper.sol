@@ -31,6 +31,10 @@ contract FlashSwapper is IPangolinCallee {
     }
 
 
+    // - event to fire when a successful flash swap is carried out
+    event Trade(address token, uint256 profit);
+
+
     // - function to borrow and swap asset borrowed
     function flashSwap(
         address _pairAddress,
@@ -85,7 +89,7 @@ contract FlashSwapper is IPangolinCallee {
         // - decode the data passed to the swap function
         (address _tokenToBorrow, uint256 _amountToBorrow) = abi.decode(_data, (address, uint256));
 
-        // - 
+        // - approve spending of borrowed token
         IERC20 token = IERC20(_tokenToBorrow);
         token.approve(address(joeRouter), _amountToBorrow);
 
@@ -98,25 +102,16 @@ contract FlashSwapper is IPangolinCallee {
 
         // - swap tokens on traderjoe
         uint amountReceived = joeRouter.swapExactTokensForTokens(_amountToBorrow, amountRequired, path, address(this), deadline)[1];
-        assert(amountReceived > amountRequired); // fail if we didn't get enough tokens back to repay our flash loan
+        assert(amountReceived > amountRequired); // fail if we didn't get enough tokens back to repay our flash swap
         token = IERC20(_amount0 == 0 ? token0 : token1);
 
         // - transfer other token back to it's contract address
         TransferHelper.safeTransfer(address(token), msg.sender, amountRequired); // return tokens to Pangolin pair
-        TransferHelper.safeTransfer(address(token), _sender, amountReceived - amountRequired); // PROFIT!!!
-    }
+        TransferHelper.safeTransfer(address(token), contractOwner, amountReceived - amountRequired); // PROFIT!!!
 
+        // - emit the trade event
+        emit Trade(address(token), amountReceived - amountRequired);
 
-    // - function to withdraw profits - can only be called successfully by contract deployer ✔
-    function withdraw(
-        IERC20 _tokenContract
-    ) onlyDeployer public {
-
-        // - transfer ERC20 tokens
-        IERC20 tokenContract = _tokenContract;
-        uint256 erc20Balance = tokenContract.balanceOf(address(this));
-        tokenContract.transfer(msg.sender, erc20Balance);
-        
     }
 
 
@@ -125,7 +120,7 @@ contract FlashSwapper is IPangolinCallee {
 
         // - transfer native coin balance if any
         payable(msg.sender).transfer(address(this).balance);
-        
+
     }
 
 }

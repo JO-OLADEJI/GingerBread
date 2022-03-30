@@ -2,11 +2,12 @@ require('dotenv/config.js');
 const { ethers } = require('ethers');
 const chalk = require('chalk');
 const Joi = require('joi');
+const axios = require('axios');
 const pangolin = require('./dex/pangolin.js');
 const traderjoe = require('./dex/traderjoe.js');
-const flashswap = require('./dex/flashswap.js');
 const { abi: pangolinPairAbi } = require('@pangolindex/exchange-contracts/artifacts/contracts/pangolin-core/interfaces/IPangolinPair.sol/IPangolinPair.json');
 const { abi: traderjoePairAbi } = require('@traderjoe-xyz/core/artifacts/contracts/traderjoe/interfaces/IJoePair.sol/IJoePair.json');
+const flashSwapAbi = require('./artifacts/contracts/FlashSwapper.sol/FlashSwapper.json')['abi'];
 
 
 
@@ -22,13 +23,13 @@ class GingerBread {
   traderjoeSwapRate = 0.3; // 0.3%
 
   /**
-   * @param {Object} Token0 - should have properties 'address', 'symbol' and 'volume'
-   * @param {Object} Token1 - should have properties 'address', 'symmbol' and 'volume'
+   * @param {Object} Token0 - should have properties 'address', 'symbol' and 'volume' - WAVAX
+   * @param {Object} Token1 - should have properties 'address', 'symmbol' and 'volume' - ERC20 token
    */
   constructor(token0, token1) {
     // - validate the token objects being used to initialize bot
     const tokenSchema = Joi.object({ 
-      'address': Joi.string().length().required(),
+      'address': Joi.string().length(42).required(),
       'symbol': Joi.string().min(2).max(7).uppercase().required(),
       'volume': Joi.number().min(0).required()
     });
@@ -47,7 +48,8 @@ class GingerBread {
     this.flashSwapAddress = process.env.FLASH_SWAP_ADDRESS;
     this.TOKEN0_TRADE = Token0['volume'];
     this.TOKEN1_TRADE = Token1['volume'];
-    // this.FlashSwapContract = new ethers.Contract(process.env.FLASH_SWAP_ADDRESS, flashswap['ABI'], this.wallet);
+    this.guests = [];
+    this.FlashSwapContract = new ethers.Contract(process.env.FLASH_SWAP_ADDRESS, flashSwapAbi, this.wallet);
   }
 
 
@@ -101,7 +103,7 @@ class GingerBread {
           totalReceivedTokensFromSwap = (volumeToBorrow / traderjoePrice) * (1 - (this.traderjoeSwapRate / 100));
         }
         const potentialProfitInReturnToken = totalReceivedTokensFromSwap - totalRepaymentInReturnToken;
-        // const profitInWavax = 
+        const potentialProfitInWavax = tokenToBorrow === this.token1 ? potentialProfitInReturnToken : (potentialProfitInReturnToken / traderjoePrice); // - assuming token0 is WAVAX
         const shouldConsiderTrade = totalReceivedTokensFromSwap > totalRepaymentInReturnToken;
         // -------------------------------------------------------------------------------------------------------
 
@@ -115,16 +117,14 @@ class GingerBread {
 
 
         // - estimate gas to be used for transaction ------------------------------>
-        const gasLimit = await FlashSwapContract.estimateGas.flashSwap(
+        const gasLimit = await this.FlashSwapContract.estimateGas.flashSwap(
           pangolinPairAddress,
           tokenToBorrow,
           ethers.utils.parseEther(`${volumeToBorrow}`).toString()
         );
         const gasPrice = await this.wallet.getGasPrice();
         const gasCost = Number(ethers.utils.formatEther(gasPrice.mul(gasLimit)));
-        // const shouldActuallyTrade = tokenToBorrow === this.token0 ? () : ();
-        // 1. convert gas to token0
-        // 2. potential profit should be > gasCost in token0
+        const shouldActuallyTrade = potentialProfitInWavax > gasCost;
         // ------------------------------------------------------------------------>
 
 
@@ -133,8 +133,8 @@ class GingerBread {
 
 
         // - EXECUTE ARBITRAGE TRADE ------------------------------>
-        const options = { gasPrice, gasLimit };
-        const tx = await FlashSwapContract.flashSwap(
+        // const options = { gasPrice, gasLimit };
+        const tx = await this.FlashSwapContract.flashSwap(
           pangolinPairAddress,
           tokenToBorrow,
           ethers.utils.parseEther(`${volumeToBorrow}`).toString()
@@ -163,12 +163,30 @@ class GingerBread {
 
 
   // - function for logging successful trades to telegram
-  serve = async (telegramChatId) => {
+  serve = async (telegramApiEndpoint) => {
 
-    // this.FlashSwapContract.on('Trade', async (tokenAdress, profit) => {
-      // function to send message to telegram;
-    // });
+    this.FlashSwapContract.on('Trade', async (tokenAdress, profit) => {
+      try {
+        this.guests.forEach(async (chatId) => {
+          await axios.post(`${telegramApiEndpoint}/sendMessage`, {
+            'chat_id': chatId,
+            'text': 'You\'ve been served a Gingerbread🍪 worth ' + ethers.utils.formatEther(profit).toString() + ' $' + (this.token0 === tokenAdress) ? this.token0Symbol : this.token1Symbol + 'tokens.'
+          });
+        });
+        return res.status(200).json({});
+      }
+      catch (err) {
+        console.log(new Error(err.message));
+        return res.status(500).send(err.message);
+      }
+    });
     
+  }
+
+
+  // - function for updating array of 'Trade' event subscribers
+  diners = (guests) => {
+    this.guests = guests;
   }
   
 

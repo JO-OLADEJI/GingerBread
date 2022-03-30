@@ -36,46 +36,6 @@
         "console"
       ]
     },
-    "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\contracts\\Arbitrage.sol": {
-      "lastModificationDate": 1647345800610,
-      "contentHash": "50a9e1d5841888c52b288945d74f1474",
-      "sourceName": "contracts/Arbitrage.sol",
-      "solcConfig": {
-        "version": "0.8.1",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/utils/math/SafeMath.sol",
-        "./flashloanV2/aave/FlashLoanReceiverBaseV2.sol",
-        "./interfaces/ILendingPoolAddressesProviderV2.sol",
-        "./interfaces/ILendingPoolV2.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.0"
-      ],
-      "artifacts": [
-        "Arbitrage"
-      ]
-    },
     "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\node_modules\\@openzeppelin\\contracts\\utils\\math\\SafeMath.sol": {
       "lastModificationDate": 1647340817081,
       "contentHash": "a6a9d6c1f662e922b82c1ba4d81cdd48",
@@ -109,122 +69,6 @@
       ],
       "artifacts": [
         "SafeMath"
-      ]
-    },
-    "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\contracts\\flashloanV2\\aave\\FlashLoanReceiverBaseV2.sol": {
-      "lastModificationDate": 1647345391069,
-      "contentHash": "33bc6eb6e0e87a4b2b49bc586b5dc13e",
-      "sourceName": "contracts/flashloanV2/aave/FlashLoanReceiverBaseV2.sol",
-      "solcConfig": {
-        "version": "0.8.1",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/utils/math/SafeMath.sol",
-        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
-        "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol",
-        "../../interfaces/IFlashLoanReceiverV2.sol",
-        "../../interfaces/ILendingPoolAddressesProviderV2.sol",
-        "../../interfaces/ILendingPoolV2.sol",
-        "../../utils/Withdrawable.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.0"
-      ],
-      "artifacts": [
-        "FlashLoanReceiverBaseV2"
-      ]
-    },
-    "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\contracts\\interfaces\\ILendingPoolAddressesProviderV2.sol": {
-      "lastModificationDate": 1647344573799,
-      "contentHash": "e71d861bb55f3beb5f5d17378f334870",
-      "sourceName": "contracts/interfaces/ILendingPoolAddressesProviderV2.sol",
-      "solcConfig": {
-        "version": "0.8.1",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.0"
-      ],
-      "artifacts": [
-        "ILendingPoolAddressesProviderV2"
-      ]
-    },
-    "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\contracts\\interfaces\\ILendingPoolV2.sol": {
-      "lastModificationDate": 1647344599883,
-      "contentHash": "db7071728435c75a4dc52b71e4dd311b",
-      "sourceName": "contracts/interfaces/ILendingPoolV2.sol",
-      "solcConfig": {
-        "version": "0.8.1",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "./ILendingPoolAddressesProviderV2.sol",
-        "../libraries/v2/DataTypes.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.0"
-      ],
-      "artifacts": [
-        "ILendingPoolV2"
       ]
     },
     "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\IERC20.sol": {
@@ -300,83 +144,6 @@
         "SafeERC20"
       ]
     },
-    "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\contracts\\interfaces\\IFlashLoanReceiverV2.sol": {
-      "lastModificationDate": 1647344665520,
-      "contentHash": "32848b37fdba68d2ccaaa0662163fe18",
-      "sourceName": "contracts/interfaces/IFlashLoanReceiverV2.sol",
-      "solcConfig": {
-        "version": "0.8.1",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "./ILendingPoolAddressesProviderV2.sol",
-        "./ILendingPoolV2.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.0"
-      ],
-      "artifacts": [
-        "IFlashLoanReceiverV2"
-      ]
-    },
-    "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\contracts\\utils\\Withdrawable.sol": {
-      "lastModificationDate": 1647345442666,
-      "contentHash": "8c0bc3b9df1c5e850df236c5acb83aa6",
-      "sourceName": "contracts/utils/Withdrawable.sol",
-      "solcConfig": {
-        "version": "0.8.1",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/token/ERC20/ERC20.sol",
-        "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol",
-        "@openzeppelin/contracts/access/Ownable.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.0"
-      ],
-      "artifacts": [
-        "Withdrawable"
-      ]
-    },
     "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\node_modules\\@openzeppelin\\contracts\\utils\\Address.sol": {
       "lastModificationDate": 1647340816212,
       "contentHash": "ad714a6368ee7d43cded6bbe8af0b155",
@@ -410,41 +177,6 @@
       ],
       "artifacts": [
         "Address"
-      ]
-    },
-    "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\contracts\\libraries\\v2\\DataTypes.sol": {
-      "lastModificationDate": 1647344731619,
-      "contentHash": "8d1f2e6b50190ecc3b373343f444920a",
-      "sourceName": "contracts/libraries/v2/DataTypes.sol",
-      "solcConfig": {
-        "version": "0.8.1",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.0"
-      ],
-      "artifacts": [
-        "DataTypes"
       ]
     },
     "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\node_modules\\@openzeppelin\\contracts\\token\\ERC20\\ERC20.sol": {
@@ -595,12 +327,54 @@
         "Context"
       ]
     },
-    "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\contracts\\interfaces\\WethInterface.sol": {
-      "lastModificationDate": 1647335564749,
-      "contentHash": "c8c2b5a75b2c0d95cd9df6bfdee262a9",
-      "sourceName": "contracts/interfaces/WethInterface.sol",
+    "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\contracts\\FlashSwapper.sol": {
+      "lastModificationDate": 1648678250729,
+      "contentHash": "f15d315ea0c68575359f81242fb0ca60",
+      "sourceName": "contracts/FlashSwapper.sol",
       "solcConfig": {
-        "version": "0.4.19",
+        "version": "0.6.12",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@pangolindex/exchange-contracts/contracts/pangolin-core/interfaces/IERC20.sol",
+        "@pangolindex/exchange-contracts/contracts/pangolin-core/interfaces/IPangolinCallee.sol",
+        "@pangolindex/exchange-contracts/contracts/pangolin-core/interfaces/IPangolinPair.sol",
+        "@pangolindex/exchange-contracts/contracts/pangolin-periphery/libraries/PangolinLibrary.sol",
+        "@pangolindex/exchange-contracts/contracts/pangolin-lib/libraries/TransferHelper.sol",
+        "@traderjoe-xyz/core/contracts/traderjoe/interfaces/IJoeRouter02.sol"
+      ],
+      "versionPragmas": [
+        ">=0.6.12"
+      ],
+      "artifacts": [
+        "FlashSwapper"
+      ]
+    },
+    "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\node_modules\\@pangolindex\\exchange-contracts\\contracts\\pangolin-core\\interfaces\\IERC20.sol": {
+      "lastModificationDate": 1647376051536,
+      "contentHash": "3d2b948a9266ee66b6e739de97c7e6e9",
+      "sourceName": "@pangolindex/exchange-contracts/contracts/pangolin-core/interfaces/IERC20.sol",
+      "solcConfig": {
+        "version": "0.6.12",
         "settings": {
           "optimizer": {
             "enabled": false,
@@ -624,10 +398,296 @@
       },
       "imports": [],
       "versionPragmas": [
-        "^0.4.19"
+        ">=0.5.0"
       ],
       "artifacts": [
-        "WethInterface"
+        "IERC20"
+      ]
+    },
+    "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\node_modules\\@pangolindex\\exchange-contracts\\contracts\\pangolin-core\\interfaces\\IPangolinCallee.sol": {
+      "lastModificationDate": 1647376051539,
+      "contentHash": "cb42352640ef2580049cc4bbcc69e9cd",
+      "sourceName": "@pangolindex/exchange-contracts/contracts/pangolin-core/interfaces/IPangolinCallee.sol",
+      "solcConfig": {
+        "version": "0.6.12",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "IPangolinCallee"
+      ]
+    },
+    "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\node_modules\\@pangolindex\\exchange-contracts\\contracts\\pangolin-core\\interfaces\\IPangolinPair.sol": {
+      "lastModificationDate": 1647376051542,
+      "contentHash": "13b57f242843f006e9a34ad0301f1311",
+      "sourceName": "@pangolindex/exchange-contracts/contracts/pangolin-core/interfaces/IPangolinPair.sol",
+      "solcConfig": {
+        "version": "0.6.12",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "IPangolinPair"
+      ]
+    },
+    "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\node_modules\\@pangolindex\\exchange-contracts\\contracts\\pangolin-periphery\\libraries\\PangolinLibrary.sol": {
+      "lastModificationDate": 1647376051570,
+      "contentHash": "95e70f0d0880a3037d9ff65a8c7bcc89",
+      "sourceName": "@pangolindex/exchange-contracts/contracts/pangolin-periphery/libraries/PangolinLibrary.sol",
+      "solcConfig": {
+        "version": "0.6.12",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../../pangolin-core/interfaces/IPangolinFactory.sol",
+        "../../pangolin-core/interfaces/IPangolinPair.sol",
+        "./SafeMath.sol"
+      ],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "PangolinLibrary"
+      ]
+    },
+    "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\node_modules\\@pangolindex\\exchange-contracts\\contracts\\pangolin-lib\\libraries\\TransferHelper.sol": {
+      "lastModificationDate": 1647376051582,
+      "contentHash": "0f90f976ad8350b002e7c21344cb9b88",
+      "sourceName": "@pangolindex/exchange-contracts/contracts/pangolin-lib/libraries/TransferHelper.sol",
+      "solcConfig": {
+        "version": "0.6.12",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.6.0"
+      ],
+      "artifacts": [
+        "TransferHelper"
+      ]
+    },
+    "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\node_modules\\@traderjoe-xyz\\core\\contracts\\traderjoe\\interfaces\\IJoeRouter02.sol": {
+      "lastModificationDate": 1648408939586,
+      "contentHash": "19e739009e61247925530af11d86abaf",
+      "sourceName": "@traderjoe-xyz/core/contracts/traderjoe/interfaces/IJoeRouter02.sol",
+      "solcConfig": {
+        "version": "0.6.12",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./IJoeRouter01.sol"
+      ],
+      "versionPragmas": [
+        ">=0.6.2"
+      ],
+      "artifacts": [
+        "IJoeRouter02"
+      ]
+    },
+    "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\node_modules\\@pangolindex\\exchange-contracts\\contracts\\pangolin-core\\interfaces\\IPangolinFactory.sol": {
+      "lastModificationDate": 1647376051542,
+      "contentHash": "0cece940e3c7445637b8e966db2d341e",
+      "sourceName": "@pangolindex/exchange-contracts/contracts/pangolin-core/interfaces/IPangolinFactory.sol",
+      "solcConfig": {
+        "version": "0.6.12",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "IPangolinFactory"
+      ]
+    },
+    "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\node_modules\\@pangolindex\\exchange-contracts\\contracts\\pangolin-periphery\\libraries\\SafeMath.sol": {
+      "lastModificationDate": 1647376051581,
+      "contentHash": "e608df41fb534f6cf57e741ba56d6e28",
+      "sourceName": "@pangolindex/exchange-contracts/contracts/pangolin-periphery/libraries/SafeMath.sol",
+      "solcConfig": {
+        "version": "0.6.12",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.6.6 <0.8.0"
+      ],
+      "artifacts": [
+        "SafeMath"
+      ]
+    },
+    "C:\\Users\\Oyeto\\Documents\\programming\\Projects\\web-apps\\flashloan-arbitrage-bot\\node_modules\\@traderjoe-xyz\\core\\contracts\\traderjoe\\interfaces\\IJoeRouter01.sol": {
+      "lastModificationDate": 1648408939583,
+      "contentHash": "6fd6517139fb0577d3b722d2693c0bda",
+      "sourceName": "@traderjoe-xyz/core/contracts/traderjoe/interfaces/IJoeRouter01.sol",
+      "solcConfig": {
+        "version": "0.6.12",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.6.2"
+      ],
+      "artifacts": [
+        "IJoeRouter01"
       ]
     }
   }
