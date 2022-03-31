@@ -1,12 +1,12 @@
 {
-  "name": "flashloan-arbitrage-bot",
+  "name": "gingerbread",
   "version": "1.0.0",
   "description": "arbitrage bot using flash swaps between two AMMs",
-  "main": "bot.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node bot.js",
+    "start": "node server.js",
     "compile": "npx hardhat compile --verbose",
-    "deploy": "npx hardhat run scripts/deploy.js --network avalancheTest"
+    "deploy": "npx hardhat run scripts/deploy.js --network fuji-testnet"
   },
   "keywords": [],
   "author": "Joshua Oladeji",

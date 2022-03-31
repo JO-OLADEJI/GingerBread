@@ -16,7 +16,7 @@ const wavaxJoe = new GingerBread(
   { symbol: 'JOE', address: '0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd', volume: 100000 }
 );
 wavaxJoe.bake();
-// wavaxJoe.serve(telegramApiEndpoint);
+wavaxJoe.serve(telegramApiEndpoint);
 
 
 
@@ -39,6 +39,7 @@ app.get('/', (req, res) => {
 });
 
 app.post('/webhook/' + process.env.TELEGRAM_BOT_TOKEN, async (req, res) => {
+  const update = req.body;
   const chatId = update['message']['chat']['id'];
   const message = update['message']['text'];
   let outputText;
