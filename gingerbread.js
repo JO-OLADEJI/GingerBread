@@ -7,7 +7,7 @@ const pangolin = require('./dex/pangolin.js');
 const traderjoe = require('./dex/traderjoe.js');
 const { abi: pangolinPairAbi } = require('@pangolindex/exchange-contracts/artifacts/contracts/pangolin-core/interfaces/IPangolinPair.sol/IPangolinPair.json');
 const { abi: traderjoePairAbi } = require('@traderjoe-xyz/core/artifacts/contracts/traderjoe/interfaces/IJoePair.sol/IJoePair.json');
-const flashSwapAbi = require('./artifacts/contracts/FlashSwapper.sol/FlashSwapper.json')['abi'];
+const flashSwap = require('./artifacts/contracts/FlashSwapper.sol/FlashSwapper.json');
 
 
 
@@ -49,10 +49,11 @@ class GingerBread {
     this.TOKEN0_TRADE = Token0['volume'];
     this.TOKEN1_TRADE = Token1['volume'];
     this.guests = [];
-    this.FlashSwapContract = new ethers.Contract(process.env.FLASH_SWAP_ADDRESS, flashSwapAbi, this.wallet);
+    this.FlashSwapContract = new ethers.Contract(process.env.FLASH_SWAP_ADDRESS, flashSwap['abi'], this.wallet);
   }
 
 
+  // - function for running the bot
   bake = async () => {
 
     // - load contracts from pangolin
