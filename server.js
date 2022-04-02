@@ -1,12 +1,13 @@
 require('dotenv').config();
 const express = require('express');
+const { ethers } = require('ethers');
 const GingerBread = require('./gingerbread.js');
 const axios = require('axios');
 const PORT = process.env.PORT || 4001;
 const app = express();
 const telegramApiEndpoint = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}`;
 const telegramBotEndpoint = `${process.env.SERVER_URL}/webhook/${process.env.TELEGRAM_BOT_TOKEN}`;
-const guests = []; // - chatIds of to be notified when there's a successful trade
+const guests = [process.env.SUBSCRIBER1, process.env.SUBSCRIBER2]; // - chatIds of to be notified when there's a successful trade
 
 
 
@@ -16,6 +17,7 @@ const wavaxJoe = new GingerBread(
   { symbol: 'JOE', address: '0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd', volume: 100000 }
 );
 wavaxJoe.bake();
+wavaxJoe.diners(guests); // add chatIds to alert onTrade
 wavaxJoe.serve(telegramApiEndpoint);
 
 
@@ -42,22 +44,7 @@ app.post('/webhook/' + process.env.TELEGRAM_BOT_TOKEN, async (req, res) => {
   const update = req.body;
   const chatId = update['message']['chat']['id'];
   const message = update['message']['text'];
-  let outputText;
-
-  if (message.toLowerCase() === '/subscribe') {
-    guests.includes(!chatId) ? guests.push(chatId) : null;
-    wavaxJoe.diners(guests); // update the trade notificatoion subscribers
-    outputText = 'You\'ll be notified when an arbitrage is successful ✔';
-  }
-  else if (message.toLowerCase() === '/unsubscribe') {
-    const guestIndex = guests.findIndex((guest) => guest === chatId);
-    guestIndex && guests.splice(guestIndex, 1);
-    wavaxJoe.diners(guests); // update the trade notificatoion subscribers
-    outputText = 'You\'ve been removed from arbitrage subscribers ✔';
-  }
-  else {
-    outputText = 'Hi, I serve Gingerbreads 🍪';
-  }
+  const outputText = 'Hi, I serve Gingerbreads🍪 privately.';
   
   try {
     await axios.post(`${telegramApiEndpoint}/sendMessage`, { 'chat_id': chatId, 'text': outputText });

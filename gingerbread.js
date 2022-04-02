@@ -171,7 +171,7 @@ class GingerBread {
         this.guests.forEach(async (chatId) => {
           await axios.post(`${telegramApiEndpoint}/sendMessage`, {
             'chat_id': chatId,
-            'text': 'You\'ve been served a Gingerbread🍪 worth ' + ethers.utils.formatEther(profit).toString() + ' $' + (this.token0 === tokenAdress) ? this.token0Symbol : this.token1Symbol + 'tokens.'
+            'text': 'You\'ve been served a Gingerbread🍪 worth ' + ethers.utils.formatEther(profit).toString() + ' ' + (this.token0 === tokenAdress ? this.token0Symbol : this.token1Symbol) + ' tokens.'
           });
         });
         return res.status(200).json({});
