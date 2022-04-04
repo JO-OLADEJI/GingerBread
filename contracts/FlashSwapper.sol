@@ -12,10 +12,10 @@ import "@traderjoe-xyz/core/contracts/traderjoe/interfaces/IJoeRouter02.sol";
 
 contract FlashSwapper is IPangolinCallee {
 
-    address immutable pangolinFactory;
-    uint constant deadline = 30000 days;
-    IJoeRouter02 immutable joeRouter;
-    address immutable contractOwner;
+    address public immutable pangolinFactory;
+    uint public constant deadline = 30000 days;
+    IJoeRouter02 public immutable joeRouter;
+    address public immutable contractOwner;
 
     /**
      * @dev initialize the contract with pangolin factory and joe router addresses for swap back and forth both exchanges
@@ -152,6 +152,7 @@ contract FlashSwapper is IPangolinCallee {
      */
     function withdraw() onlyDeployer external {
         payable(msg.sender).transfer(address(this).balance);
+        emit Withdraw(msg.sender, address(this).balance);
     }
 
 

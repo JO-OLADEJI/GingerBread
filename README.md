@@ -13,13 +13,20 @@ git clone https://github.com/Joshua-Oladeji/GingerBread.git
 - run `npm install` from the root directory to install dependencies
 
 - fill the .env.example file with the appropriate data and rename the file to .env
-  - `PRIVATE_KEY`: private key of the contract deployer address
+  - `PRIVATE_KEY`: private key of the contract deployer address (metamask)
+  - `GANACHE_PRIVATE_KEY` private key of the deployer address from Ganache
+  - `GANACHE_ADDR1_PRIVATE_KEY` private key of another address from Ganache. This is only needed if you want to run the unit tests.
   - `C_CHAIN_NODE`: a link that connects you to an avalanche C-chain node. you can get a 'speedy-node' from [moralis.io](https://moralis.io/)
   - `TELEGRAM_BOT_TOKEN`: an authorization token from Telegram's Bot father. it's pretty easy to [get one](https://core.telegram.org/bots#6-botfather)
   - `SERVER_URL`: base url of your server. it's for configuring a webhook for your telegram bot. if you're running on localhost, you will need to expose your server via a public url. check out [ngrok](https://ngrok.com/)
   - `FLASH_SWAP_ADDRESS`: contract address of the bot you'll deploy
 
-- deploy the contract to your preferred network. available networks can be found in `hardhat.config.js`
+- compile the contract using the following command:
+```
+npx hardhat compile
+```
+
+- deploy the contract to your preferred network. available networks can be found in `hardhat.config.js`. default network is **Ganache**, so make sure to spin up a local blockchain using ganache before running this command.
 ```
 npx hardhat run scripts/deploy.js --network <network-name>
 ```
