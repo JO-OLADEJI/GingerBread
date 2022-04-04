@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.6.12;
+pragma solidity >=0.6.6;
 
 import "@pangolindex/exchange-contracts/contracts/pangolin-core/interfaces/IERC20.sol";
 import "@pangolindex/exchange-contracts/contracts/pangolin-core/interfaces/IPangolinCallee.sol";
@@ -7,7 +7,6 @@ import "@pangolindex/exchange-contracts/contracts/pangolin-core/interfaces/IPang
 import "@pangolindex/exchange-contracts/contracts/pangolin-periphery/libraries/PangolinLibrary.sol";
 import "@pangolindex/exchange-contracts/contracts/pangolin-lib/libraries/TransferHelper.sol";
 import "@traderjoe-xyz/core/contracts/traderjoe/interfaces/IJoeRouter02.sol";
-// import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 
 
@@ -18,6 +17,11 @@ contract FlashSwapper is IPangolinCallee {
     IJoeRouter02 immutable joeRouter;
     address immutable contractOwner;
 
+    /**
+     * @dev initialize the contract with pangolin factory and joe router addresses for swap back and forth both exchanges
+     * @param _pangolinFactory factory contract address of pangolin exchange
+     * @param _joeRouter router contract address of traderjoe_xyz exchange
+     */
     constructor(address _pangolinFactory, address _joeRouter) public {
         pangolinFactory = _pangolinFactory;
         joeRouter = IJoeRouter02(_joeRouter);
@@ -26,17 +30,25 @@ contract FlashSwapper is IPangolinCallee {
 
 
     modifier onlyDeployer {
-        // - verify function is called by contract owner
         require(msg.sender == contractOwner, "UNAUTHORIZED!");
         _;
     }
 
 
-    // - event to fire when a successful flash swap is carried out
-    event Trade(address token, uint256 profit);
+    /**
+     * @dev events to broadcast when transactions are made on this contract
+     */
+    event Trade(address token, uint256 profit); // successful arbitrage
+    event GasAdded(address depositor, uint256 value);
+    event Withdraw(address sender, uint256 amount);
 
 
-    // - function to borrow and swap asset borrowed
+    /**
+     * @dev function to borrow ERC20 token from pangolin
+     * @param _pairAddress pair address of token pair on pangolin exchange
+     * @param _tokenToBorrow address of ERC20 token to borrow - must be one of the tokens in the above pair
+     * @param _amountToBorrow amount of above ERC20 token to borrow - in wei
+     */
     function flashSwap(
         address _pairAddress,
         address _tokenToBorrow, 
@@ -53,14 +65,22 @@ contract FlashSwapper is IPangolinCallee {
         uint256 amount0Out = _tokenToBorrow == token0 ? _amountToBorrow : 0;
         uint256 amount1Out = _tokenToBorrow == token1 ? _amountToBorrow : 0;
 
-        // - borrow the correct token from pangolin
         bytes memory data = abi.encode(_tokenToBorrow, _amountToBorrow);
-        IPangolinPair(_pairAddress).swap(amount0Out, amount1Out, address(this), data); // this function calls the [pangolinCall] function below to get it's money back
+        /**
+         * @dev borrow specified amount of token from pangolin - this function calls the [pangolinCall] function below to get it's asset back
+         */
+        IPangolinPair(_pairAddress).swap(amount0Out, amount1Out, address(this), data);
 
     }
 
 
-    // - function to return borrowed amount (with other token - equivalent)
+    /**
+     * @dev function to return borrowed amount equivalent - in the other token of the pair
+     * @param _sender the pair address of token pair on pangolin
+     * @param _amount0 amount of token0 to borrow
+     * @param _amount1 amount of token1 to borrow
+     * @param _data abi encoded data containing the address and amount of token to borrow
+     */
     function pangolinCall(
         address _sender, 
         uint256 _amount0, 
@@ -104,6 +124,8 @@ contract FlashSwapper is IPangolinCallee {
         // - swap tokens on traderjoe
         uint amountReceived = joeRouter.swapExactTokensForTokens(_amountToBorrow, amountRequired, path, address(this), deadline)[1];
         assert(amountReceived > amountRequired); // fail if we didn't get enough tokens back to repay our flash swap
+
+        // - set token to payback to other token in the pair
         token = IERC20(_amount0 == 0 ? token0 : token1);
 
         // - transfer other token back to it's contract address
@@ -116,12 +138,28 @@ contract FlashSwapper is IPangolinCallee {
     }
 
 
-    // - function to withdraw AVAX - if avax is sent to this contract for any random reason ✔
-    function withdraw() onlyDeployer public {
+    /**
+     * @dev function to deposit avax to contract for gas to carry out arbitrages
+     */
+    function addGas() external payable {
+        require(msg.value > 0, "ZERO_AMOUNT_SENT!");
+        emit GasAdded(msg.sender, msg.value);
+    }
 
-        // - transfer native coin balance if any
+
+    /**
+     * @dev function to withdraw avax from contract
+     */
+    function withdraw() onlyDeployer external {
         payable(msg.sender).transfer(address(this).balance);
+    }
 
+
+    /**
+     * @dev check the amout of AVAX left in contract
+     */
+    function checkGas() external view returns(uint256) {
+        return address(this).balance;
     }
 
 }

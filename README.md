@@ -53,16 +53,16 @@ you might want to know the purpose of each method if you want to tweak some thin
 ### taste() 🍰
 - logs the prices of the tokens on the [pangolin](https://pangolin.exchange/) and [traderjoe](https://traderjoexyz.com/home#/) DEXes.
 - logs the potential profit/loss realized if an arbitrage is attempted based on the current tokens prices.
+<br />
 ![Screenshot (248)](https://user-images.githubusercontent.com/53357470/160957408-bfa8c628-baa0-45a8-bd82-d1f5be163d03.png)
 <br />
 
-### serve(endpoint) 🍽
-- takes your `telegramApiEndpoint` url as parameter and notifies you with the info when an arbitrage is carried out.
+### serve() 🍽
+- adds listeners for all events on the FlashSwapper contract. info from every event is then emitted to be logged to telegram.
 <br />
 
-### diners(guests) 👨‍👩‍👧‍👦
-- takes the `guest` parameter as an arrays of chat_ids of the telegram accounts that subscribe to notifications when a trade is carried out.
-- should not be called manually. the telegram bot handles it.
+### flourRemaining
+- returns the balance of AVAX remaining (gas fees) in the FlashSwapper contract.
 <br />
 <br />
 <br />
