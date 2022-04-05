@@ -23,8 +23,8 @@ const token1 = { symbol: 'JOE', address: '0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC
  * @instance of GingerBread class
  */
 const wavaxJoe = new GingerBread(token0, token1);
-wavaxJoe.bake(); // start checking for arbitrage opportunities on every new block
-wavaxJoe.serve(); // activate function for logging contract events to telegram
+// wavaxJoe.bake(); // start checking for arbitrage opportunities on every new block
+// wavaxJoe.serve(); // activate function for logging contract events to telegram
 
 
 
@@ -50,7 +50,7 @@ const initTelgramBot = async () => {
  * @returns {Promise}
  */
 const logToTelegram = async (chatId, message) => {
-  return await axios.post(
+  await axios.post(
     `${telegramApiEndpoint}/sendMessage`, 
     { 
       'chat_id': chatId,
@@ -124,7 +124,7 @@ wavaxJoe.on('withdrawal', async (props) => {
  * @callback fn handles the get requests to the homepage
  */
 app.get('/', (req, res) => {
-  res.json({ 'Gingerbread': 'a bot for arbitraging trades using flashswaps' });
+  res.status(200).json({ 'Gingerbread': 'a bot for arbitraging trades using flashswaps' });
 });
 
 
@@ -135,14 +135,17 @@ app.post('/webhook/' + process.env.TELEGRAM_BOT_TOKEN, async (req, res) => {
   const update = req.body;
   const chatId = update['message']['chat']['id'];
   const message = update['message']['text'].toLowerCase();
+  console.log({ message });
   
   try {
-    if (!telegramBotCommands.includes[message]) {
-      await logToTelegram(chatId, 'Hi, I serve Gingerbreads🍪 privately.');
+    let reply;
+    if (!telegramBotCommands.includes(message)) {
+      reply = 'Hi, I serve Gingerbreads🍪 privately.';
+      await logToTelegram(chatId, reply);
     }
     else if (message === telegramBotCommands[0]) {
       const contractBalance = await wavaxJoe.flourRemaining();
-      const reply = `Your contract's balance is <b>${ethers.utils.formatEther(contractBalance)} AVAX</b>.`;
+      reply = `Your contract's balance is <b>${ethers.utils.formatEther(contractBalance)} AVAX</b>.`;
       await logToTelegram(chatId, reply);
     }
     return res.status(200).json({ reply });

@@ -42,6 +42,7 @@ class GingerBread extends EventEmitter {
     if (Token1Error) throw new Error(Token1Error['details'][0]['message']);
 
     // - initialize bot variables
+    super();
     this.web3Provider = new ethers.providers.JsonRpcProvider(process.env.C_CHAIN_NODE);
     this.wallet = new ethers.Wallet(process.env.PRIVATE_KEY, this.web3Provider);
     this.token0 = Token0['address'];
