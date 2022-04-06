@@ -6,8 +6,8 @@ const axios = require('axios');
 const PORT = process.env.PORT || 4001;
 const telegramApiEndpoint = `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}`;
 const telegramBotEndpoint = `${process.env.SERVER_URL}/webhook/${process.env.TELEGRAM_BOT_TOKEN}`;
-const telegramBotCommands = ['/balance'];
-const guests = [process.env.SUBSCRIBER1, process.env.SUBSCRIBER2]; // - chatIds of to be notified when there's a successful trade
+const telegramBotCommands = ['/balance', '/subscribe', '/unsubscribe'];
+const guests = []; // - chatIds of to be notified when there's a successful trade
 const app = express();
 app.use(express.json());
 
@@ -23,8 +23,8 @@ const token1 = { symbol: 'JOE', address: '0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC
  * @instance of GingerBread class
  */
 const wavaxJoe = new GingerBread(token0, token1);
-// wavaxJoe.bake(); // start checking for arbitrage opportunities on every new block
-// wavaxJoe.serve(); // activate function for logging contract events to telegram
+wavaxJoe.bake(); // start checking for arbitrage opportunities on every new block
+wavaxJoe.serve(); // activate function for logging contract events to telegram
 
 
 
@@ -146,6 +146,17 @@ app.post('/webhook/' + process.env.TELEGRAM_BOT_TOKEN, async (req, res) => {
     else if (message === telegramBotCommands[0]) {
       const contractBalance = await wavaxJoe.flourRemaining();
       reply = `Your contract's balance is <b>${ethers.utils.formatEther(contractBalance)} AVAX</b>.`;
+      await logToTelegram(chatId, reply);
+    }
+    else if (message === telegramBotCommands[1]) {
+      guests.includes(!chatId) ? guests.push(chatId) : null;
+      reply = `You'll be notified when an arbitrage is successful ✔.`;
+      await logToTelegram(chatId, reply);
+    }
+    else if (message === telegramBotCommands[2]) {
+      const guestIndex = guests.findIndex((guest) => guest === chatId);
+      guestIndex && guests.splice(guestIndex, 1);
+      reply = `You've successfully unsubscribed from trade notifications ✔.`;
       await logToTelegram(chatId, reply);
     }
     return res.status(200).json({ reply });
