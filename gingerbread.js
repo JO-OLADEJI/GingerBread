@@ -128,20 +128,20 @@ class GingerBread extends EventEmitter {
         /**
          * @async function to estimate gas to be used for transaction
          */
-        const gasLimit = await this.FlashSwapContract.estimateGas.flashSwap(
-          pangolinPairAddress,
-          tokenToBorrow,
-          ethers.utils.parseEther(`${volumeToBorrow}`).toString()
-        );
-        const gasPrice = await this.wallet.getGasPrice();
-        const gasCost = Number(ethers.utils.formatEther(gasPrice.mul(gasLimit)));
-        const shouldActuallyTrade = potentialProfitInWavax > gasCost;
-        const options = { gasPrice, gasLimit };
+        // const gasLimit = await this.FlashSwapContract.estimateGas.flashSwap(
+        //   pangolinPairAddress,
+        //   tokenToBorrow,
+        //   ethers.utils.parseEther(`${volumeToBorrow}`).toString()
+        // );
+        // const gasPrice = await this.wallet.getGasPrice();
+        // const gasCost = Number(ethers.utils.formatEther(gasPrice.mul(gasLimit)));
+        // const shouldActuallyTrade = potentialProfitInWavax > gasCost;
+        // const options = { gasPrice, gasLimit };
         // ------------------------------------------------------------------------>
 
 
         // - don't trade if gasCost is higher than spread
-        if (!shouldActuallyTrade) return;
+        // if (!shouldActuallyTrade) return;
 
 
         /**
@@ -150,8 +150,8 @@ class GingerBread extends EventEmitter {
         const tx = await this.FlashSwapContract.flashSwap(
           pangolinPairAddress,
           tokenToBorrow,
-          ethers.utils.parseEther(`${volumeToBorrow}`).toString(),
-          options
+          ethers.utils.parseEther(`${volumeToBorrow}`).toString()
+          // options
         );
         await tx.wait();
         this.emit('tx-hash', { 'hash': tx.hash });
