@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "compile": "npx hardhat compile --verbose",
-    "deploy": "npx hardhat run scripts/deploy.js --network fuji-testnet"
+    "deploy": "npx hardhat run scripts/deploy.js --network ganache"
   },
   "keywords": [],
   "author": "Joshua Oladeji",

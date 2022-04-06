@@ -67,7 +67,7 @@ you might want to know the purpose of each method if you want to tweak some thin
 - adds listeners for all events on the FlashSwapper contract. info from every event is then emitted to be logged to telegram.
 <br />
 
-### flourRemaining
+### flourRemaining()
 - returns the balance of AVAX remaining (gas fees) in the FlashSwapper contract.
 <br />
 <br />
