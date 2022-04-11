@@ -149,7 +149,7 @@ app.post('/webhook/' + process.env.TELEGRAM_BOT_TOKEN, async (req, res) => {
       await logToTelegram(chatId, reply);
     }
     else if (message === telegramBotCommands[1]) {
-      guests.includes(!chatId) ? guests.push(chatId) : null;
+      !guests.includes(chatId) ? guests.push(chatId) : null;
       reply = `You'll be notified when an arbitrage is successful ✔.`;
       await logToTelegram(chatId, reply);
     }
