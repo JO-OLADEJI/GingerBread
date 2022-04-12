@@ -123,6 +123,7 @@ class GingerBread extends EventEmitter {
 
         // - don't consider trading if spread cannot cover DEX fees
         if (!shouldConsiderTrade) return;
+        this.emit('opportunity', { 'borrow': tokenToBorrowSymbol, 'borrowAmount': volumeToBorrow, 'repay': tokenToReturnSymbol, 'profit': potentialProfitInReturnToken });
 
 
         /**
@@ -150,8 +151,8 @@ class GingerBread extends EventEmitter {
         const tx = await this.FlashSwapContract.flashSwap(
           pangolinPairAddress,
           tokenToBorrow,
-          ethers.utils.parseEther(`${volumeToBorrow}`).toString()
-          // options
+          ethers.utils.parseEther(`${volumeToBorrow}`).toString(),
+          { 'gasLimit': 350000 }
         );
         await tx.wait();
         this.emit('tx-hash', { 'hash': tx.hash });

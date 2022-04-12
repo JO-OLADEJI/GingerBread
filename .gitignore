@@ -2,4 +2,4 @@
 .env
 artifacts/
 cache/
-test.js
+playground.js

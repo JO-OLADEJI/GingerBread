@@ -23,8 +23,8 @@ const token1 = { symbol: 'JOE', address: '0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC
  * @instance of GingerBread class
  */
 const wavaxJoe = new GingerBread(token0, token1);
-// wavaxJoe.bake(); // start checking for arbitrage opportunities on every new block
-// wavaxJoe.serve(); // activate function for logging contract events to telegram
+wavaxJoe.bake(); // start checking for arbitrage opportunities on every new block
+wavaxJoe.serve(); // activate function for logging contract events to telegram
 
 
 
@@ -59,6 +59,21 @@ const logToTelegram = async (chatId, message) => {
     });
 }
 
+
+
+/**
+ * @listens opportunity handles the event that's emmited when an arbitrage opportunity occurs
+ */
+wavaxJoe.on('opportunity', async (props) => {
+  const emojis = ['✌', '😉', '😇', '🧐', '🤩', '😎', '🤙'];
+  try {
+    const message = `<b>Arbitrage Opportunity</b>${emojis[Math.floor(Math.random()*emojis.length)]} to buy ${Number(props['borrowAmount']).toLocaleString()} ${props['borrow']} and profit <b>${props['profit']} ${props['repay']}</b>.`;
+    guests.forEach(async (chatId) => await logToTelegram(chatId, message));
+  }
+  catch (err) {
+    console.log(new Error(err.message));
+  }
+});
 
 
 /**
@@ -135,7 +150,6 @@ app.post('/webhook/' + process.env.TELEGRAM_BOT_TOKEN, async (req, res) => {
   const update = req.body;
   const chatId = update['message']['chat']['id'];
   const message = update['message']['text'].toLowerCase();
-  console.log({ message });
   
   try {
     let reply;
