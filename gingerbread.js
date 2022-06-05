@@ -9,6 +9,7 @@ const { abi: pangolinPairAbi } = require('@pangolindex/exchange-contracts/artifa
 const { abi: traderjoePairAbi } = require('@traderjoe-xyz/core/artifacts/contracts/traderjoe/interfaces/IJoePair.sol/IJoePair.json');
 const flashSwap = require('./artifacts/contracts/FlashSwapper.sol/FlashSwapper.json');
 const ERC20 = require('./ERC20.js');
+const convertToAvax = require('./utils/convertToAvax.js');
 
 
 
@@ -27,8 +28,9 @@ class GingerBread extends EventEmitter {
   /**
    * @param {Object} Token0 - should have properties 'address' and 'volume' - WAVAX
    * @param {Object} Token1 - should have properties 'address' and 'volume' - ERC20 token
+   * @param {Boolean} reverse - specify if price should be inverted for token pair
    */
-  constructor(token0, token1) {
+  constructor(token0, token1, reverseRate = false) {
     /**
      * @function tokenSchema - to validate the token objects being used to initialize bot
      */
@@ -45,6 +47,7 @@ class GingerBread extends EventEmitter {
     super();
     this.web3Provider = new ethers.providers.JsonRpcProvider(process.env.C_CHAIN_NODE);
     this.wallet = new ethers.Wallet(process.env.PRIVATE_KEY, this.web3Provider);
+    this.reverseRate = reverseRate;
     this.ERCToken0 = new ERC20(Token0['address']);
     this.ERCToken1 = new ERC20(Token1['address']);
     this.token0 = Token0['address'];
@@ -83,19 +86,19 @@ class GingerBread extends EventEmitter {
      */
     this.web3Provider.on('block', async (blockNumber) => {
       try {
-        console.log('\n>> ' + chalk.blue('Current block: ') + chalk.green.bold(blockNumber));
+        console.log('\n>> ' + chalk.blue('Current block: ') + chalk.red.bold(blockNumber));
         
         // - get price from pangolin
         const pangolinReserves = await pangolinPair.getReserves();
         const pangolinReserve0 = Number(ethers.utils.formatUnits(pangolinReserves[0], token0Decimals));
         const pangolinReserve1 = Number(ethers.utils.formatUnits(pangolinReserves[1], token1Decimals));
-        const pangolinPrice = pangolinReserve0 / pangolinReserve1;
+        const pangolinPrice = this.reverseRate ? (pangolinReserve1 / pangolinReserve0) : (pangolinReserve0 / pangolinReserve1);
 
         // - get price from tradejoe
         const traderjoeReserves = await TraderjoePair.getReserves();
         const traderjoeReserve0 = Number(ethers.utils.formatUnits(traderjoeReserves[0], token0Decimals));
         const traderjoeReserve1 = Number(ethers.utils.formatUnits(traderjoeReserves[1], token1Decimals));
-        const traderjoePrice = traderjoeReserve0 / traderjoeReserve1;
+        const traderjoePrice = this.reverseRate ? (traderjoeReserve1 / traderjoeReserve0) : (traderjoeReserve0 / traderjoeReserve1);
 
 
         // - check if the difference can cover DEX fees ------------------------------------------------------->
@@ -117,11 +120,14 @@ class GingerBread extends EventEmitter {
           totalReceivedTokensFromSwap = (volumeToBorrow / traderjoePrice) * (1 - (this.traderjoeSwapRate / 100));
         }
         const potentialProfitInReturnToken = totalReceivedTokensFromSwap - totalRepaymentInReturnToken;
-        const potentialProfitInWavax = tokenToBorrow === this.token1 ? potentialProfitInReturnToken : (potentialProfitInReturnToken / traderjoePrice); // - assuming token0 is WAVAX
+        const potentialProfitInAVAX = await convertToAvax(
+          (tokenToBorrow === this.token0 ? this.token1 : this.token0),
+          potentialProfitInReturnToken
+        );
         const shouldConsiderTrade = totalReceivedTokensFromSwap > totalRepaymentInReturnToken;
         // -------------------------------------------------------------------------------------------------------
 
-        
+
         // - tabulate the result to the console
         this.taste(
           token0Symbol,
@@ -136,7 +142,7 @@ class GingerBread extends EventEmitter {
 
 
         // - don't consider trading if spread cannot cover DEX fees
-        // if (!shouldConsiderTrade) return;
+        if (!shouldConsiderTrade) return;
 
 
         // /**
@@ -149,7 +155,7 @@ class GingerBread extends EventEmitter {
         // );
         // const gasPrice = await this.wallet.getGasPrice();
         // const gasCost = Number(ethers.utils.formatEther(gasPrice.mul(gasLimit)));
-        // const shouldActuallyTrade = potentialProfitInWavax > gasCost;
+        // const shouldActuallyTrade = potentialProfitInAVAX > gasCost;
         // const options = { gasPrice, gasLimit };
         // // ------------------------------------------------------------------------>
 
