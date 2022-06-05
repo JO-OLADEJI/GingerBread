@@ -8,6 +8,7 @@ const traderjoe = require('./dex/traderjoe.js');
 const { abi: pangolinPairAbi } = require('@pangolindex/exchange-contracts/artifacts/contracts/pangolin-core/interfaces/IPangolinPair.sol/IPangolinPair.json');
 const { abi: traderjoePairAbi } = require('@traderjoe-xyz/core/artifacts/contracts/traderjoe/interfaces/IJoePair.sol/IJoePair.json');
 const flashSwap = require('./artifacts/contracts/FlashSwapper.sol/FlashSwapper.json');
+const ERC20 = require('./ERC20.js');
 
 
 
@@ -24,16 +25,15 @@ class GingerBread extends EventEmitter {
   traderjoeSwapRate = 0.3; // 0.3%
 
   /**
-   * @param {Object} Token0 - should have properties 'address', 'symbol' and 'volume' - WAVAX
-   * @param {Object} Token1 - should have properties 'address', 'symmbol' and 'volume' - ERC20 token
+   * @param {Object} Token0 - should have properties 'address' and 'volume' - WAVAX
+   * @param {Object} Token1 - should have properties 'address' and 'volume' - ERC20 token
    */
   constructor(token0, token1) {
     /**
      * @function tokenSchema - to validate the token objects being used to initialize bot
      */
     const tokenSchema = Joi.object({
-      'address': Joi.string().length(42).required(),
-      'symbol': Joi.string().min(2).max(7).uppercase().required(),
+      'address': Joi.string().length(42).lowercase().pattern(/^0x[a-f0-9]{40}$/).required(),
       'volume': Joi.number().min(0).required()
     });
     const { value: Token0, error: Token0Error } = tokenSchema.validate(token0);
@@ -45,10 +45,10 @@ class GingerBread extends EventEmitter {
     super();
     this.web3Provider = new ethers.providers.JsonRpcProvider(process.env.C_CHAIN_NODE);
     this.wallet = new ethers.Wallet(process.env.PRIVATE_KEY, this.web3Provider);
+    this.ERCToken0 = new ERC20(Token0['address']);
+    this.ERCToken1 = new ERC20(Token1['address']);
     this.token0 = Token0['address'];
-    this.token0Symbol = Token0['symbol'];
     this.token1 = Token1['address'];
-    this.token1Symbol = Token1['symbol'];
     this.flashSwapAddress = process.env.FLASH_SWAP_ADDRESS;
     this.TOKEN0_TRADE = Token0['volume'];
     this.TOKEN1_TRADE = Token1['volume'];
@@ -72,6 +72,11 @@ class GingerBread extends EventEmitter {
     const traderjoePairAddress = await TraderjoeFactory.getPair(this.token0, this.token1);
     const TraderjoePair = new ethers.Contract(traderjoePairAddress, traderjoePairAbi, this.wallet);
 
+    // - load tokens info
+    const token0Symbol = await this.ERCToken0.symbol();
+    const token1Symbol = await this.ERCToken1.symbol();
+    const token0Decimals = await this.ERCToken0.decimals();
+    const token1Decimals = await this.ERCToken1.decimals();
 
     /**
      * @async function to listen to newly mined block
@@ -82,21 +87,21 @@ class GingerBread extends EventEmitter {
         
         // - get price from pangolin
         const pangolinReserves = await pangolinPair.getReserves();
-        const pangolinReserve0 = Number(ethers.utils.formatUnits(pangolinReserves[0], 18));
-        const pangolinReserve1 = Number(ethers.utils.formatUnits(pangolinReserves[1], 18));
+        const pangolinReserve0 = Number(ethers.utils.formatUnits(pangolinReserves[0], token0Decimals));
+        const pangolinReserve1 = Number(ethers.utils.formatUnits(pangolinReserves[1], token1Decimals));
         const pangolinPrice = pangolinReserve0 / pangolinReserve1;
 
         // - get price from tradejoe
         const traderjoeReserves = await TraderjoePair.getReserves();
-        const traderjoeReserve0 = Number(ethers.utils.formatUnits(traderjoeReserves[0], 18));
-        const traderjoeReserve1 = Number(ethers.utils.formatUnits(traderjoeReserves[1], 18));
+        const traderjoeReserve0 = Number(ethers.utils.formatUnits(traderjoeReserves[0], token0Decimals));
+        const traderjoeReserve1 = Number(ethers.utils.formatUnits(traderjoeReserves[1], token1Decimals));
         const traderjoePrice = traderjoeReserve0 / traderjoeReserve1;
 
 
         // - check if the difference can cover DEX fees ------------------------------------------------------->
         const tokenToBorrow = pangolinPrice > traderjoePrice ? this.token1 : this.token0;
-        const tokenToBorrowSymbol = pangolinPrice > traderjoePrice ? this.token1Symbol : this.token0Symbol;
-        const tokenToReturnSymbol = pangolinPrice > traderjoePrice ? this.token0Symbol : this.token1Symbol;
+        const tokenToBorrowSymbol = pangolinPrice > traderjoePrice ? token1Symbol : token0Symbol;
+        const tokenToReturnSymbol = pangolinPrice > traderjoePrice ? token0Symbol : token1Symbol;
         let volumeToBorrow;
         let totalRepaymentInReturnToken;
         let totalReceivedTokensFromSwap;
@@ -118,43 +123,52 @@ class GingerBread extends EventEmitter {
 
         
         // - tabulate the result to the console
-        this.taste(traderjoePrice, pangolinPrice, potentialProfitInReturnToken, tokenToBorrowSymbol, volumeToBorrow, tokenToReturnSymbol);
+        this.taste(
+          token0Symbol,
+          token1Symbol,
+          traderjoePrice,
+          pangolinPrice,
+          potentialProfitInReturnToken,
+          tokenToBorrowSymbol,
+          volumeToBorrow,
+          tokenToReturnSymbol
+        );
 
 
         // - don't consider trading if spread cannot cover DEX fees
-        if (!shouldConsiderTrade) return;
+        // if (!shouldConsiderTrade) return;
 
 
-        /**
-         * @async function to estimate gas to be used for transaction
-         */
-        const gasLimit = await this.FlashSwapContract.estimateGas.flashSwap(
-          pangolinPairAddress,
-          tokenToBorrow,
-          ethers.utils.parseEther(`${volumeToBorrow}`).toString()
-        );
-        const gasPrice = await this.wallet.getGasPrice();
-        const gasCost = Number(ethers.utils.formatEther(gasPrice.mul(gasLimit)));
-        const shouldActuallyTrade = potentialProfitInWavax > gasCost;
-        const options = { gasPrice, gasLimit };
-        // ------------------------------------------------------------------------>
+        // /**
+        //  * @async function to estimate gas to be used for transaction
+        //  */
+        // const gasLimit = await this.FlashSwapContract.estimateGas.flashSwap(
+        //   pangolinPairAddress,
+        //   tokenToBorrow,
+        //   ethers.utils.parseEther(`${volumeToBorrow}`).toString()
+        // );
+        // const gasPrice = await this.wallet.getGasPrice();
+        // const gasCost = Number(ethers.utils.formatEther(gasPrice.mul(gasLimit)));
+        // const shouldActuallyTrade = potentialProfitInWavax > gasCost;
+        // const options = { gasPrice, gasLimit };
+        // // ------------------------------------------------------------------------>
 
 
-        // - don't trade if gasCost is higher than spread
-        if (!shouldActuallyTrade) return;
+        // // - don't trade if gasCost is higher than spread
+        // if (!shouldActuallyTrade) return;
 
 
-        /**
-         * @async function to EXECUTE ARBITRAGE TRADE
-         */
-        const tx = await this.FlashSwapContract.flashSwap(
-          pangolinPairAddress,
-          tokenToBorrow,
-          ethers.utils.parseEther(`${volumeToBorrow}`).toString(),
-          options
-        );
-        await tx.wait();
-        this.emit('tx-hash', { 'hash': tx.hash });
+        // /**
+        //  * @async function to EXECUTE ARBITRAGE TRADE
+        //  */
+        // const tx = await this.FlashSwapContract.flashSwap(
+        //   pangolinPairAddress,
+        //   tokenToBorrow,
+        //   ethers.utils.parseEther(`${volumeToBorrow}`).toString(),
+        //   options
+        // );
+        // await tx.wait();
+        // this.emit('tx-hash', { 'hash': tx.hash });
         // -------------------------------------------------------->
       }
       catch (err) {
@@ -166,6 +180,8 @@ class GingerBread extends EventEmitter {
 
   /**
    * function for logging the price info of tokens from new blocks to the console
+   * @param {String} token0Symbol - symbol of the first token
+   * @param {String} token1Symbol - symbol of the second token
    * @param {Number} traderjoeRate - rate of the token pair from traderjoe_xyz DEX
    * @param {Number} pangolinRate - rate of the token pair from pangolin DEX
    * @param {Number} potentialProfit - profit after DEXes fees have been removed (does not take gas fee for transaction into account)
@@ -174,10 +190,19 @@ class GingerBread extends EventEmitter {
    * @param {String} returnTokenSymbol - ticker symbol of the token that's to be returned to pangolin DEX
    * @method taste
    */
-  taste = (traderjoeRate, pangolinRate, potentialProfit, borrowTokenSymbol, borrowVolume, returnTokenSymbol) => {
+  taste = (
+    token0Symbol,
+    token1Symbol,
+    traderjoeRate,
+    pangolinRate,
+    potentialProfit,
+    borrowTokenSymbol,
+    borrowVolume,
+    returnTokenSymbol
+  ) => {
     console.table([{
-      'Token0': this.token0Symbol,
-      'Token1': this.token1Symbol,
+      'Token0': token0Symbol,
+      'Token1': token1Symbol,
       'Trader Joe': traderjoeRate,
       'Pangolin': pangolinRate,
       'Borrow': `${borrowVolume.toLocaleString()} ${borrowTokenSymbol}`,

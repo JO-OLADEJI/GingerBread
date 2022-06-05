@@ -14,7 +14,7 @@ class ERC20 {
       throw new Error(error['details'][0]['message']);
     }
 
-    const provider = new ethers.providers.JsonRpcProvider('https://api.avax.network/ext/bc/C/rpc');
+    const provider = new ethers.providers.JsonRpcProvider(process.env.C_CHAIN_NODE ?? 'https://api.avax.network/ext/bc/C/rpc');
     this.ERC20Contract = new ethers.Contract(
       value,
       erc20Abi,
