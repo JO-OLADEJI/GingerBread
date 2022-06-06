@@ -11,7 +11,6 @@ const convertToAvax = async (tokenAddress, quantity = 1) => {
 
   const api = 'https://api.traderjoexyz.com/priceavax/';
   const response = await axios.get(`${api}${tokenAddress}`);
-  // const avaxValue = BigNumber.from((response.data).toString()).mul(BigNumber.from(quantity.toString()));
   const avaxRate = Number(ethers.utils.formatEther(BigNumber.from((response.data).toString())));
   return avaxRate * quantity;
 }

@@ -1,5 +1,5 @@
 require('dotenv/config.js');
-const { ethers } = require('ethers');
+const { ethers, BigNumber } = require('ethers');
 const chalk = require('chalk');
 const Joi = require('joi');
 const EventEmitter = require('events');
@@ -81,13 +81,17 @@ class GingerBread extends EventEmitter {
     const token0Decimals = await this.ERCToken0.decimals();
     const token1Decimals = await this.ERCToken1.decimals();
 
+    // initialize boolean to pause callback function below when currently executing a transaction
+    let freeze = false;
+
     /**
      * @async function to listen to newly mined block
      */
     this.web3Provider.on('block', async (blockNumber) => {
+      if (freeze) return;
       try {
         console.log('\n>> ' + chalk.blue('Current block: ') + chalk.red.bold(blockNumber));
-        
+
         // - get price from pangolin
         const pangolinReserves = await pangolinPair.getReserves();
         const pangolinReserve0 = Number(ethers.utils.formatUnits(pangolinReserves[0], token0Decimals));
@@ -124,7 +128,7 @@ class GingerBread extends EventEmitter {
           (tokenToBorrow === this.token0 ? this.token1 : this.token0),
           potentialProfitInReturnToken
         );
-        const shouldConsiderTrade = totalReceivedTokensFromSwap > totalRepaymentInReturnToken;
+        const shouldConsiderTrade = potentialProfitInReturnToken > 0;
         // -------------------------------------------------------------------------------------------------------
 
 
@@ -145,40 +149,38 @@ class GingerBread extends EventEmitter {
         if (!shouldConsiderTrade) return;
 
 
-        // /**
-        //  * @async function to estimate gas to be used for transaction
-        //  */
-        // const gasLimit = await this.FlashSwapContract.estimateGas.flashSwap(
-        //   pangolinPairAddress,
-        //   tokenToBorrow,
-        //   ethers.utils.parseEther(`${volumeToBorrow}`).toString()
-        // );
-        // const gasPrice = await this.wallet.getGasPrice();
-        // const gasCost = Number(ethers.utils.formatEther(gasPrice.mul(gasLimit)));
-        // const shouldActuallyTrade = potentialProfitInAVAX > gasCost;
-        // const options = { gasPrice, gasLimit };
-        // // ------------------------------------------------------------------------>
+        /**
+         * @async function to estimate gas to be used for transaction
+         */
+        const gasLimit = BigNumber.from('350000');
+        const gasPrice = await this.wallet.getGasPrice();
+        const gasCost = gasLimit.mul(gasPrice);
+        const shouldActuallyTrade = potentialProfitInAVAX > Number(ethers.utils.formatEther(gasCost));
+        // ------------------------------------------------------------------------>
 
 
-        // // - don't trade if gasCost is higher than spread
-        // if (!shouldActuallyTrade) return;
+        // - don't trade if gasCost is higher than spread
+        if (!shouldActuallyTrade) return;
 
 
-        // /**
-        //  * @async function to EXECUTE ARBITRAGE TRADE
-        //  */
-        // const tx = await this.FlashSwapContract.flashSwap(
-        //   pangolinPairAddress,
-        //   tokenToBorrow,
-        //   ethers.utils.parseEther(`${volumeToBorrow}`).toString(),
-        //   options
-        // );
-        // await tx.wait();
-        // this.emit('tx-hash', { 'hash': tx.hash });
+        /**
+         * @async function to EXECUTE ARBITRAGE TRADE
+         */
+        freeze = true;
+        const arbitrageTx = await this.FlashSwapContract.flashSwap(
+          pangolinPairAddress,
+          tokenToBorrow,
+          ethers.utils.parseEther(`${volumeToBorrow}`).toString(),
+          { gasLimit }
+        );
+        await arbitrageTx.wait();
+        this.emit('tx-hash', { 'hash': arbitrageTx.hash });
+        freeze = false;
         // -------------------------------------------------------->
       }
       catch (err) {
         console.log(new Error(err.message));
+        setTimeout(() => freeze = false, 5 * 1000); // 10 seconds freeze period if error occurs
       }
     });
   }
@@ -234,7 +236,7 @@ class GingerBread extends EventEmitter {
     this.FlashSwapContract.on('Withdraw', async (sender, amount) => {
       this.emit('withdrawal', { 'by': sender, 'amount': amount });
     });
-    
+
   }
 
 
@@ -246,10 +248,8 @@ class GingerBread extends EventEmitter {
   flourRemaining = async () => {
     return await this.FlashSwapContract.checkGas();
   }
-  
+
 }
-
-
 
 
 module.exports = GingerBread;
