@@ -20,17 +20,9 @@ module.exports = {
     ]
   },
 
-  'defaultNetwork': 'ganache',
+  'defaultNetwork': 'avalanche-mainnet',
 
   'networks': {
-
-    'ganache': {
-      url: 'HTTP://127.0.0.1:7545',
-      accounts: (!process.env.GANACHE_ADDR1_PRIVATE_KEY) ? 
-      [`0x${process.env.GANACHE_PRIVATE_KEY}`]
-      : 
-      [`0x${process.env.GANACHE_PRIVATE_KEY}`, `0x${process.env.GANACHE_ADDR1_PRIVATE_KEY}`]
-    },
     
     'fuji-testnet': {
       url: 'https://api.avax-test.network/ext/bc/C/rpc',
