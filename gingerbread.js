@@ -106,6 +106,7 @@ class GingerBread extends EventEmitter {
 
 
         // - check if the difference can cover DEX fees ------------------------------------------------------->
+        // calculate these again 👇
         const tokenToBorrow = pangolinPrice > traderjoePrice ? this.token1 : this.token0;
         const tokenToBorrowSymbol = pangolinPrice > traderjoePrice ? token1Symbol : token0Symbol;
         const tokenToReturnSymbol = pangolinPrice > traderjoePrice ? token0Symbol : token1Symbol;
