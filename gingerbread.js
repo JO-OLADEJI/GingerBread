@@ -112,13 +112,13 @@ class GingerBread extends EventEmitter {
     const token1Decimals = await this.ERCToken1.decimals();
 
     // initialize boolean to pause callback function below when currently executing a transaction
-    let freeze = false;
+    let freezeTillTransactionExecute = false;
 
     /**
      * @async function to listen to newly mined block
      */
     this.web3Provider.on("block", async (blockNumber) => {
-      if (freeze) return;
+      if (freezeTillTransactionExecute) return;
       try {
         console.log(
           "\n>> " + chalk.blue("Current block: ") + chalk.red.bold(blockNumber)
@@ -148,7 +148,7 @@ class GingerBread extends EventEmitter {
           ? traderjoeReserve1 / traderjoeReserve0
           : traderjoeReserve0 / traderjoeReserve1;
 
-        // - check if the difference can cover DEX fees 
+        // - check if the difference can cover DEX fees
         const tokenToBorrow =
           traderjoePrice > pangolinPrice && traderjoePrice > 0
             ? this.token1
@@ -161,8 +161,8 @@ class GingerBread extends EventEmitter {
         let volumeToBorrow;
         let totalRepaymentInReturnToken;
         let totalReceivedTokensFromSwap;
-        const lendFeeMultiplier = (1 + (this.pangolinSwapRate / 100));
-        const swapFeeMultiplier = (1 - (this.traderjoeSwapRate / 100));
+        const lendFeeMultiplier = 1 + this.pangolinSwapRate / 100;
+        const swapFeeMultiplier = 1 - this.traderjoeSwapRate / 100;
 
         if (tokenToBorrow === this.token0) {
           volumeToBorrow = this.TOKEN0_TRADE;
@@ -201,23 +201,18 @@ class GingerBread extends EventEmitter {
         // - don't consider trading if spread cannot cover DEX fees
         if (!shouldConsiderTrade) return;
 
-        /**
-         * @async function to estimate gas to be used for transaction
-         */
+        // - estimate gas to be used for transaction
         const gasLimit = BigNumber.from("350000");
         const gasPrice = await this.wallet.getGasPrice();
         const gasCost = gasLimit.mul(gasPrice);
-        const shouldActuallyTrade =
+        const shouldExecuteTrade =
           potentialProfitInAVAX > Number(ethers.utils.formatEther(gasCost));
-        // ------------------------------------------------------------------------>
 
         // - don't trade if gasCost is higher than spread
-        if (!shouldActuallyTrade) return;
+        if (!shouldExecuteTrade) return;
 
-        /**
-         * @async function to EXECUTE ARBITRAGE TRADE
-         */
-        freeze = true;
+        // - EXECUTE ARBITRAGE TRADE
+        freezeTillTransactionExecute = true;
         const arbitrageTx = await this.FlashSwapContract.flashSwap(
           pangolinPairAddress,
           tokenToBorrow,
@@ -226,11 +221,11 @@ class GingerBread extends EventEmitter {
         );
         await arbitrageTx.wait();
         this.emit("tx-hash", { hash: arbitrageTx.hash });
-        freeze = false;
-        // -------------------------------------------------------->
+        freezeTillTransactionExecute = false;
       } catch (err) {
         console.log(new Error(err.message));
-        setTimeout(() => (freeze = false), 5 * 1000); // 10 seconds freeze period if error occurs
+        // 10 seconds freeze period if error occurs
+        setTimeout(() => (freezeTillTransactionExecute = false), 10 * 1000);
       }
     });
   };
